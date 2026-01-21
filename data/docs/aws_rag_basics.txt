@@ -1,0 +1,3 @@
+RAG (Retrieval-Augmented Generation) is a system pattern that improves answer quality by retrieving relevant documents and grounding generation on those sources.
+A RAG pipeline typically includes ingestion, chunking, embedding or lexical indexing, retrieval, reranking, and answer generation with citations.
+Evaluation focuses on retrieval quality (Recall@k, MRR, nDCG) and groundedness/citation integrity to ensure responses are supported by retrieved context.

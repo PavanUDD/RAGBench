@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SQLite databases
+*.db
+
+# Runtime outputs
+runs/*.db
+runs/*.json
+
+# Logs
+*.log
+
+# Secrets (safety)
+.env
+.env.*
+

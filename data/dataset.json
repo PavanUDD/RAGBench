@@ -1,0 +1,38 @@
+{
+  "documents": [
+    {
+      "id": "doc_aws_rag",
+      "text": "Retrieval-Augmented Generation improves factual accuracy by retrieving relevant documents and grounding generated responses in external knowledge sources."
+    },
+    {
+      "id": "doc_bm25",
+      "text": "BM25 is a bag-of-words retrieval algorithm that ranks documents based on term frequency and inverse document frequency."
+    },
+    {
+      "id": "doc_eval",
+      "text": "RAG evaluation measures retrieval quality using metrics like Recall@k, MRR, and nDCG to assess whether relevant documents are returned."
+    },
+    {
+      "id": "doc_obs",
+      "text": "Observability in GenAI systems includes logging, metrics, tracing, and auditability to ensure reliability in production."
+    }
+  ],
+  "queries": [
+    {
+      "query": "What is Retrieval-Augmented Generation?",
+      "relevant_docs": ["doc_aws_rag"]
+    },
+    {
+      "query": "How does BM25 retrieval work?",
+      "relevant_docs": ["doc_bm25"]
+    },
+    {
+      "query": "How do you evaluate a RAG system?",
+      "relevant_docs": ["doc_eval"]
+    },
+    {
+      "query": "Why is observability important in GenAI?",
+      "relevant_docs": ["doc_obs"]
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RAGBench - Runs</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: #0b0f19;
+      color: #e6e6e6;
+      margin: 0;
+      padding: 24px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom: 14px; }
+    .title { font-size: 22px; font-weight: 800; }
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #c7d2fe;
+      font-size: 12px;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    .card {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .muted { color: #a7b0c0; font-size: 13px; }
+    a { color: #93c5fd; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid #1f2937;
+      margin-top: 10px;
+    }
+    .table th, .table td {
+      padding: 10px 10px;
+      border-bottom: 1px solid #1f2937;
+      vertical-align: top;
+    }
+    .table th { text-align: left; color: #a7b0c0; font-weight: 600; background: rgba(2,6,23,0.6); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .tag {
+      font-size: 12px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      background: rgba(15,23,42,0.7);
+      color: #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="topbar">
+    <div class="title">RAGBench Runs <span class="pill">Local • $0</span></div>
+    <div class="muted">
+      <a href="/">Home</a> •
+      <a href="/demo-run">New Run</a> •
+      <a href="/compare">Compare</a>
+      <a href="/regression">Regression Guard</a>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <div class="muted">
+      This is your experiment tracker. Each run stores metrics and links to analysis for debugging.
+    </div>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Created</th>
+          <th>Run ID</th>
+	  <th>Retriever</th>
+          <th>Metrics</th>
+          <th>Links</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in runs %}
+        <tr>
+          <td class="mono">{{ r.created_at }}</td>
+	  <td class="mono">{{ r.run_id }}</td>
+	  <td><span class="tag">{{ r.retriever }}</span></td>
+          <td>
+            {% for m in r.metrics %}
+              <span class="tag">{{ m.name }}={{ m.value }}</span>
+            {% endfor %}
+          </td>
+          <td>
+            <a href="/analysis/{{ r.run_id }}">analysis</a>
+            &nbsp;•&nbsp;
+            <a href="/open-report/{{ r.run_id }}">report</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>
