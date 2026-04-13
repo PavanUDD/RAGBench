@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>RAGBench — Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060910; --surface: #0d1117; --surface2: #161b22; --border: #21262d;
+      --accent: #3b82f6; --accent2: #8b5cf6; --green: #10b981; --yellow: #f59e0b;
+      --red: #ef4444; --text: #e6edf3; --muted: #8b949e; --muted2: #6e7681;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; border-bottom: 1px solid var(--border); background: rgba(6,9,16,0.9); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; text-decoration: none; color: var(--text); }
+    .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .nav-links { display: flex; gap: 6px; }
+    .nav-links a { padding: 7px 14px; border-radius: 8px; font-size: 14px; color: var(--muted); text-decoration: none; transition: all 0.15s; }
+    .nav-links a:hover, .nav-links a.active { background: var(--surface2); color: var(--text); }
+    .nav-cta { padding: 8px 18px; background: var(--accent); border-radius: 8px; font-size: 14px; font-weight: 600; color: white; text-decoration: none; }
+    .nav-cta:hover { background: #2563eb; }
+
+    .page { max-width: 1200px; margin: 0 auto; padding: 40px; }
+
+    /* PAGE HEADER */
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 32px; }
+    .page-title { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+    .page-sub { font-size: 14px; color: var(--muted); margin-top: 6px; }
+    .run-btn { padding: 10px 20px; background: var(--accent); border-radius: 8px; font-size: 14px; font-weight: 600; color: white; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: all 0.15s; }
+    .run-btn:hover { background: #2563eb; transform: translateY(-1px); }
+
+    /* WINNER BANNER */
+    .winner-banner { background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(59,130,246,0.15)); border: 1px solid rgba(139,92,246,0.35); border-radius: 14px; padding: 20px 24px; margin-bottom: 28px; display: flex; align-items: center; gap: 16px; }
+    .winner-crown { font-size: 32px; }
+    .winner-text h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .winner-text p { font-size: 14px; color: var(--muted); line-height: 1.5; }
+    .winner-badge { margin-left: auto; padding: 8px 18px; background: linear-gradient(135deg, #8b5cf6, #3b82f6); border-radius: 99px; font-size: 14px; font-weight: 700; color: white; white-space: nowrap; }
+
+    /* RETRIEVER CARDS */
+    .retriever-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+    .retriever-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; transition: all 0.2s; position: relative; overflow: hidden; }
+    .retriever-card.winner { border-color: #8b5cf6; box-shadow: 0 0 0 1px rgba(139,92,246,0.3), 0 8px 30px rgba(139,92,246,0.15); }
+    .retriever-card.winner::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #8b5cf6, #3b82f6); }
+    .retriever-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+    .rc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .rc-name { font-size: 18px; font-weight: 800; }
+    .rc-tag { font-size: 11px; padding: 4px 10px; border-radius: 99px; font-weight: 600; }
+    .tag-winner { background: rgba(139,92,246,0.2); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.4); }
+    .tag-strong { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+    .tag-baseline { background: rgba(16,185,129,0.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.25); }
+    .rc-metrics { display: flex; flex-direction: column; gap: 14px; }
+    .rc-metric { }
+    .rc-metric-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .rc-metric-name { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
+    .rc-metric-val { font-size: 15px; font-weight: 800; }
+    .rc-bar-wrap { background: var(--surface2); border-radius: 99px; height: 6px; overflow: hidden; }
+    .rc-bar { height: 100%; border-radius: 99px; }
+    .bar-purple { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+    .bar-blue { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .bar-green { background: linear-gradient(90deg, #10b981, #34d399); }
+    .rc-footer { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .rc-latency { font-size: 12px; color: var(--muted); }
+    .rc-latency span { color: var(--text); font-weight: 600; }
+    .rc-method { font-size: 11px; color: var(--muted2); }
+
+    /* COMPARISON TABLE */
+    .comparison { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 28px; }
+    .comparison-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .comparison-title { font-size: 16px; font-weight: 700; }
+    .comparison-sub { font-size: 13px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 12px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); }
+    td { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 14px; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .winner-row td { background: rgba(139,92,246,0.05); }
+    .retriever-name { font-weight: 700; font-size: 15px; }
+    .score-good { color: #a78bfa; font-weight: 700; }
+    .score-ok { color: #60a5fa; font-weight: 700; }
+    .score-base { color: #6ee7b7; font-weight: 700; }
+    .delta { font-size: 12px; }
+    .delta-pos { color: var(--green); }
+    .delta-neg { color: var(--red); }
+    .delta-zero { color: var(--muted); }
+
+    /* VERDICT */
+    .verdict { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 28px; }
+    .verdict-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .verdict-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .verdict-item { }
+    .verdict-item-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .verdict-item-text { font-size: 14px; color: var(--text); line-height: 1.6; }
+
+    /* QUICK LINKS */
+    .quick-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .ql { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; text-decoration: none; color: inherit; transition: all 0.15s; display: flex; align-items: center; gap: 14px; }
+    .ql:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .ql-icon { font-size: 22px; }
+    .ql-text h4 { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+    .ql-text p { font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-logo"><div class="logo-icon">⚡</div>RAGBench</a>
+  <div class="nav-links">
+    <a href="/dashboard" class="active">Dashboard</a>
+    <a href="/runs">Runs</a>
+    <a href="/compare">Compare</a>
+    <a href="/regression">Regression Guard</a>
+  </div>
+  <a href="/demo-run" class="nav-cta">▶ New Run</a>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Retrieval Dashboard</div>
+      <div class="page-sub">Latest benchmark results • {{ total_runs }} total runs • {{ doc_count }} chunks indexed across {{ query_count }} benchmark queries</div>
+    </div>
+    <a href="/demo-run" class="run-btn">▶&nbsp; Run New Benchmark</a>
+  </div>
+
+  <!-- WINNER BANNER -->
+  <div class="winner-banner">
+    <div class="winner-crown">🏆</div>
+    <div class="winner-text">
+      <h3>{{ winner }} wins on this corpus</h3>
+      <p>{{ verdict_summary }}</p>
+    </div>
+    <div class="winner-badge">{{ winner }} · MRR@10 = {{ winner_mrr }}</div>
+  </div>
+
+  <!-- RETRIEVER CARDS -->
+  <div class="retriever-grid">
+    {% for r in retrievers %}
+    <div class="retriever-card {% if r.is_winner %}winner{% endif %}">
+      <div class="rc-header">
+        <div class="rc-name">{{ r.name }}</div>
+        <span class="rc-tag {{ r.tag_class }}">{{ r.tag_label }}</span>
+      </div>
+      <div class="rc-metrics">
+        <div class="rc-metric">
+          <div class="rc-metric-header">
+            <span class="rc-metric-name">Recall @ 5</span>
+            <span class="rc-metric-val" style="color:{{ r.color }}">{{ r.recall5 }}</span>
+          </div>
+          <div class="rc-bar-wrap"><div class="rc-bar {{ r.bar_class }}" style="width:{{ r.recall5_pct }}%"></div></div>
+        </div>
+        <div class="rc-metric">
+          <div class="rc-metric-header">
+            <span class="rc-metric-name">MRR @ 10</span>
+            <span class="rc-metric-val" style="color:{{ r.color }}">{{ r.mrr10 }}</span>
+          </div>
+          <div class="rc-bar-wrap"><div class="rc-bar {{ r.bar_class }}" style="width:{{ r.mrr10_pct }}%"></div></div>
+        </div>
+        <div class="rc-metric">
+          <div class="rc-metric-header">
+            <span class="rc-metric-name">nDCG @ 10</span>
+            <span class="rc-metric-val" style="color:{{ r.color }}">{{ r.ndcg10 }}</span>
+          </div>
+          <div class="rc-bar-wrap"><div class="rc-bar {{ r.bar_class }}" style="width:{{ r.ndcg10_pct }}%"></div></div>
+        </div>
+      </div>
+      <div class="rc-footer">
+        <div class="rc-latency">Latency: <span>{{ r.latency_ms }}ms</span> avg</div>
+        <div class="rc-method">{{ r.method }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- COMPARISON TABLE -->
+  <div class="comparison">
+    <div class="comparison-header">
+      <div>
+        <div class="comparison-title">Full Metric Comparison</div>
+        <div class="comparison-sub">All retrievers · Latest run · {{ query_count }} benchmark queries</div>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Retriever</th><th>Recall@5</th><th>MRR@10</th><th>nDCG@10</th><th>vs BM25 Baseline</th><th>Method</th></tr></thead>
+      <tbody>
+        {% for r in retrievers %}
+        <tr class="{% if r.is_winner %}winner-row{% endif %}">
+          <td><span class="retriever-name">{{ r.name }}</span> {% if r.is_winner %}<span style="font-size:12px;color:#a78bfa;margin-left:6px;">← winner</span>{% endif %}</td>
+          <td class="{{ r.score_class }}">{{ r.recall5 }}</td>
+          <td class="{{ r.score_class }}">{{ r.mrr10 }}</td>
+          <td class="{{ r.score_class }}">{{ r.ndcg10 }}</td>
+          <td>
+            {% if r.delta_mrr > 0 %}<span class="delta delta-pos">+{{ r.delta_mrr_str }} MRR</span>
+            {% elif r.delta_mrr < 0 %}<span class="delta delta-neg">{{ r.delta_mrr_str }} MRR</span>
+            {% else %}<span class="delta delta-zero">baseline</span>{% endif %}
+          </td>
+          <td style="font-size:13px;color:var(--muted)">{{ r.method }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- VERDICT -->
+  <div class="verdict">
+    <div class="verdict-title">🧠 Analyst Verdict</div>
+    <div class="verdict-grid">
+      <div class="verdict-item">
+        <div class="verdict-item-title">Why {{ winner }} wins</div>
+        <div class="verdict-item-text">{{ verdict_why }}</div>
+      </div>
+      <div class="verdict-item">
+        <div class="verdict-item-title">BM25 weakness</div>
+        <div class="verdict-item-text">Pure keyword matching misses semantic similarity. Queries using synonyms or paraphrases fail to retrieve relevant chunks — MRR drops by {{ bm25_gap }}.</div>
+      </div>
+      <div class="verdict-item">
+        <div class="verdict-item-title">Recommendation</div>
+        <div class="verdict-item-text">{{ verdict_rec }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK LINKS -->
+  <div class="quick-links">
+    <a href="/runs" class="ql"><div class="ql-icon">📋</div><div class="ql-text"><h4>All Runs</h4><p>Full experiment history</p></div></a>
+    <a href="/compare" class="ql"><div class="ql-icon">📈</div><div class="ql-text"><h4>Trend Chart</h4><p>MRR over time per retriever</p></div></a>
+    <a href="/regression" class="ql"><div class="ql-icon">🛡️</div><div class="ql-text"><h4>Regression Guard</h4><p>Detect quality drops</p></div></a>
+  </div>
+</div>
+</body>
+</html>

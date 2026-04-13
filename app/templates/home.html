@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>RAGBench — LLM Retrieval Evaluation</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060910;
+      --surface: #0d1117;
+      --surface2: #161b22;
+      --border: #21262d;
+      --accent: #3b82f6;
+      --accent2: #8b5cf6;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --muted2: #6e7681;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* NAV */
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; border-bottom: 1px solid var(--border); background: rgba(6,9,16,0.8); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .nav-badge { font-size: 11px; padding: 3px 8px; border-radius: 99px; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); color: #93c5fd; font-weight: 500; }
+    .nav-links { display: flex; gap: 6px; }
+    .nav-links a { padding: 7px 14px; border-radius: 8px; font-size: 14px; color: var(--muted); text-decoration: none; transition: all 0.15s; }
+    .nav-links a:hover { background: var(--surface2); color: var(--text); }
+    .nav-cta { padding: 8px 18px; background: var(--accent); border-radius: 8px; font-size: 14px; font-weight: 600; color: white; text-decoration: none; transition: all 0.15s; }
+    .nav-cta:hover { background: #2563eb; transform: translateY(-1px); }
+
+    /* HERO */
+    .hero { text-align: center; padding: 80px 40px 60px; max-width: 800px; margin: 0 auto; }
+    .hero-tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25); color: #93c5fd; font-size: 13px; font-weight: 500; margin-bottom: 24px; }
+    .hero-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #3b82f6; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    h1 { font-size: 52px; font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 20px; background: linear-gradient(135deg, #e6edf3 0%, #8b949e 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero-sub { font-size: 18px; color: var(--muted); line-height: 1.7; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary { padding: 14px 28px; background: var(--accent); border-radius: 10px; font-size: 15px; font-weight: 600; color: white; text-decoration: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(59,130,246,0.35); }
+    .btn-secondary { padding: 14px 28px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; font-size: 15px; font-weight: 500; color: var(--text); text-decoration: none; transition: all 0.15s; }
+    .btn-secondary:hover { background: var(--surface); border-color: #3b82f6; transform: translateY(-2px); }
+
+    /* STATS BANNER */
+    .stats { display: flex; gap: 0; max-width: 700px; margin: 60px auto 0; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow: hidden; }
+    .stat { flex: 1; padding: 20px; text-align: center; border-right: 1px solid var(--border); }
+    .stat:last-child { border-right: none; }
+    .stat-val { font-size: 26px; font-weight: 800; background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* SECTION */
+    .section { max-width: 1100px; margin: 0 auto; padding: 0 40px 80px; }
+    .section-title { font-size: 13px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .section-heading { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 12px; }
+    .section-sub { font-size: 16px; color: var(--muted); line-height: 1.6; max-width: 520px; }
+
+    /* FEATURE CARDS */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 40px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; transition: all 0.2s; text-decoration: none; color: inherit; display: block; }
+    .card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 12px 35px rgba(0,0,0,0.4); }
+    .card-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 16px; }
+    .card-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .card-desc { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+    .card-link { font-size: 13px; color: var(--accent); font-weight: 500; display: flex; align-items: center; gap: 4px; }
+
+    /* METRICS PREVIEW */
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 40px; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .metric-name { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .metric-retrievers { display: flex; flex-direction: column; gap: 8px; }
+    .metric-row { display: flex; align-items: center; gap: 10px; }
+    .metric-label { font-size: 12px; color: var(--muted); width: 52px; font-weight: 600; }
+    .metric-bar-wrap { flex: 1; background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
+    .metric-bar { height: 100%; border-radius: 99px; transition: width 1s ease; }
+    .bar-tfidf { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .bar-hybrid { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+    .bar-bm25 { background: linear-gradient(90deg, #10b981, #34d399); }
+    .metric-val { font-size: 12px; font-weight: 700; width: 38px; text-align: right; }
+
+    /* HOW IT WORKS */
+    .steps { display: flex; flex-direction: column; gap: 0; margin-top: 40px; position: relative; }
+    .steps::before { content: ''; position: absolute; left: 20px; top: 0; bottom: 0; width: 1px; background: linear-gradient(180deg, var(--accent) 0%, var(--accent2) 100%); opacity: 0.3; }
+    .step { display: flex; gap: 20px; padding: 20px 0; }
+    .step-num { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; flex-shrink: 0; position: relative; z-index: 1; }
+    .step-content { padding-top: 8px; }
+    .step-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .step-desc { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* FOOTER */
+    footer { border-top: 1px solid var(--border); padding: 24px 40px; display: flex; align-items: center; justify-content: space-between; }
+    .footer-text { font-size: 13px; color: var(--muted2); }
+    .footer-badge { display: flex; gap: 8px; }
+    .fbadge { font-size: 12px; padding: 4px 10px; border-radius: 99px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <div class="logo-icon">⚡</div>
+    RAGBench
+  </div>
+  <div class="nav-links">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/runs">Runs</a>
+    <a href="/compare">Compare</a>
+    <a href="/regression">Regression Guard</a>
+    <a href="/analysis/latest">Analysis</a>
+  </div>
+  <a href="/demo-run" class="nav-cta">▶ Run Benchmark</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-tag">LLM Retrieval Evaluation Framework</div>
+  <h1>Know if your RAG<br/>system actually works</h1>
+  <p class="hero-sub">RAGBench benchmarks your retrieval pipeline before it goes to production. Compare BM25, TF-IDF, and hybrid dense+sparse strategies with real IR metrics — locally, privately, at zero cost.</p>
+  <div class="hero-actions">
+    <a href="/demo-run" class="btn-primary">▶ &nbsp;Run Benchmark</a>
+    <a href="/dashboard" class="btn-secondary">View Dashboard →</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-val">3</div><div class="stat-label">Retrieval Strategies</div></div>
+    <div class="stat"><div class="stat-val">3</div><div class="stat-label">IR Metrics</div></div>
+    <div class="stat"><div class="stat-val">$0</div><div class="stat-label">Cost to Run</div></div>
+    <div class="stat"><div class="stat-val">100%</div><div class="stat-label">Local & Private</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <p class="section-title">Live Scores</p>
+  <h2 class="section-heading">Current Benchmark Results</h2>
+  <p class="section-sub">Latest run across BM25, TF-IDF, and Hybrid retrieval on your internal document corpus.</p>
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-name">Recall @ 5</div>
+      <div class="metric-retrievers">
+        <div class="metric-row"><span class="metric-label" style="color:#60a5fa">TFIDF</span><div class="metric-bar-wrap"><div class="metric-bar bar-tfidf" style="width:91%"></div></div><span class="metric-val" style="color:#60a5fa">0.909</span></div>
+        <div class="metric-row"><span class="metric-label" style="color:#a78bfa">HYBRID</span><div class="metric-bar-wrap"><div class="metric-bar bar-hybrid" style="width:91%"></div></div><span class="metric-val" style="color:#a78bfa">0.909</span></div>
+        <div class="metric-row"><span class="metric-label" style="color:#34d399">BM25</span><div class="metric-bar-wrap"><div class="metric-bar bar-bm25" style="width:80%"></div></div><span class="metric-val" style="color:#34d399">0.796</span></div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-name">MRR @ 10</div>
+      <div class="metric-retrievers">
+        <div class="metric-row"><span class="metric-label" style="color:#60a5fa">TFIDF</span><div class="metric-bar-wrap"><div class="metric-bar bar-tfidf" style="width:71%"></div></div><span class="metric-val" style="color:#60a5fa">0.712</span></div>
+        <div class="metric-row"><span class="metric-label" style="color:#a78bfa">HYBRID</span><div class="metric-bar-wrap"><div class="metric-bar bar-hybrid" style="width:72%"></div></div><span class="metric-val" style="color:#a78bfa">0.716</span></div>
+        <div class="metric-row"><span class="metric-label" style="color:#34d399">BM25</span><div class="metric-bar-wrap"><div class="metric-bar bar-bm25" style="width:61%"></div></div><span class="metric-val" style="color:#34d399">0.607</span></div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-name">nDCG @ 10</div>
+      <div class="metric-retrievers">
+        <div class="metric-row"><span class="metric-label" style="color:#60a5fa">TFIDF</span><div class="metric-bar-wrap"><div class="metric-bar bar-tfidf" style="width:74%"></div></div><span class="metric-val" style="color:#60a5fa">0.744</span></div>
+        <div class="metric-row"><span class="metric-label" style="color:#a78bfa">HYBRID</span><div class="metric-bar-wrap"><div class="metric-bar bar-hybrid" style="width:73%"></div></div><span class="metric-val" style="color:#a78bfa">0.733</span></div>
+        <div class="metric-row"><span class="metric-label" style="color:#34d399">BM25</span><div class="metric-bar-wrap"><div class="metric-bar bar-bm25" style="width:65%"></div></div><span class="metric-val" style="color:#34d399">0.647</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <p class="section-title">Features</p>
+  <h2 class="section-heading">Everything you need to ship<br/>reliable RAG systems</h2>
+  <p class="section-sub">Stop guessing whether your retrieval works. Measure it.</p>
+  <div class="cards">
+    <a href="/dashboard" class="card">
+      <div class="card-icon" style="background:rgba(59,130,246,0.15);">📊</div>
+      <div class="card-title">Comparison Dashboard</div>
+      <div class="card-desc">Side-by-side comparison of all retrieval strategies with winner detection, metric breakdowns, and actionable verdicts.</div>
+      <div class="card-link">Open Dashboard →</div>
+    </a>
+    <a href="/analysis/latest" class="card">
+      <div class="card-icon" style="background:rgba(139,92,246,0.15);">🔬</div>
+      <div class="card-title">Failure Analysis</div>
+      <div class="card-desc">Drill into any query to see exactly which chunks were retrieved, which were relevant, and why the retriever failed or succeeded.</div>
+      <div class="card-link">Inspect Failures →</div>
+    </a>
+    <a href="/regression" class="card">
+      <div class="card-icon" style="background:rgba(16,185,129,0.15);">🛡️</div>
+      <div class="card-title">Regression Guard</div>
+      <div class="card-desc">Automatically detect when a config change degrades retrieval quality before it ships to production.</div>
+      <div class="card-link">View Guard Status →</div>
+    </a>
+    <a href="/runs" class="card">
+      <div class="card-icon" style="background:rgba(245,158,11,0.15);">📋</div>
+      <div class="card-title">Experiment Tracker</div>
+      <div class="card-desc">Every benchmark run is stored with full metrics and config. Compare runs over time and track retrieval quality trends.</div>
+      <div class="card-link">View All Runs →</div>
+    </a>
+    <a href="/compare" class="card">
+      <div class="card-icon" style="background:rgba(239,68,68,0.15);">📈</div>
+      <div class="card-title">Trend Charts</div>
+      <div class="card-desc">MRR@10 trend lines per retriever over time. See how strategy performance evolves as you tune chunking and indexing.</div>
+      <div class="card-link">View Trends →</div>
+    </a>
+    <a href="/demo-run" class="card">
+      <div class="card-icon" style="background:rgba(59,130,246,0.15);">⚡</div>
+      <div class="card-title">Zero-Cost Local Eval</div>
+      <div class="card-desc">No API keys. No cloud costs. No data leaving your machine. Run full benchmarks on your own documents in seconds.</div>
+      <div class="card-link">Run Now →</div>
+    </a>
+  </div>
+</div>
+
+<div class="section">
+  <p class="section-title">How It Works</p>
+  <h2 class="section-heading">From docs to decision<br/>in one run</h2>
+  <p class="section-sub">RAGBench evaluates the layer that matters most — retrieval — using industry-standard IR metrics.</p>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Ingest & Chunk</div><div class="step-desc">Your documents are loaded, split into overlapping word-level chunks, and indexed. Configurable chunk size and overlap.</div></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Build Retrieval Indexes</div><div class="step-desc">Three indexes are built simultaneously — BM25 lexical index, TF-IDF vector, and FAISS dense embedding index (sentence-transformers all-MiniLM-L6-v2).</div></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">Run Benchmark Queries</div><div class="step-desc">22 ground-truth queries run against each retriever. Each query has a gold-standard relevant chunk set for evaluation.</div></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-title">Compute IR Metrics</div><div class="step-desc">Recall@5, MRR@10, and nDCG@10 computed per retriever. Results stored in SQLite for trend tracking.</div></div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-content"><div class="step-title">Verdict & Action</div><div class="step-desc">Dashboard declares a winner, explains why, and flags any regressions. Failure analysis shows exactly which queries need improvement.</div></div></div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-text">RAGBench — Local LLM Retrieval Evaluation • Built by Pavan Devara</div>
+  <div class="footer-badge">
+    <span class="fbadge">Python</span>
+    <span class="fbadge">FAISS</span>
+    <span class="fbadge">FastAPI</span>
+    <span class="fbadge">Local • $0</span>
+  </div>
+</footer>
+
+</body>
+</html>
