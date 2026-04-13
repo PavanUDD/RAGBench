@@ -14,10 +14,19 @@ from app.db.database import init_db, get_conn
 from app.core.run_id import new_run_id
 from app.reports.report import MetricPoint, build_dashboard_html
 
+from app.core.retrieval import BM25Retriever
+from app.core.tfidf import TfidfRetriever
+from app.core.hybrid import HybridRetriever
+from app.core.ingest import ingest_folder
+from app.core.benchmarks import build_benchmark_from_docs
+from app.core.metrics import recall_at_k, mrr_at_k, ndcg_at_k
+
+
+
 app = FastAPI(title="RAGBench", version="0.1.0")
 templates = Jinja2Templates(directory="app/templates")
 
-def detect_regression(conn, metric_name: str = "MRR@10", min_history: int = 3, tolerance: float = 0.02, retriever_filter: str = "TFIDF"):
+def detect_regression(conn, metric_name: str = "MRR@10", min_history: int = 3, tolerance: float = 0.02, retriever_filter: str = "HYBRID"):
     """
     Detects whether the latest run regressed compared to the best recent run.
     Default: compares TFIDF runs only (stable).
@@ -134,23 +143,7 @@ def demo_run():
     }
 
     # Demo metrics (we'll replace with real Recall@k/MRR soon)
-    # REAL evaluation: load dataset -> run BM25 -> compute metrics
-    from app.core.dataset import load_dataset
-    from app.core.retrieval import BM25Retriever
-    from app.core.metrics import recall_at_k, mrr_at_k, ndcg_at_k
-
-        # REAL docs ingestion -> chunking -> BM25 over chunks -> benchmark queries
-    from app.core.ingest import ingest_folder
-    from app.core.benchmarks import build_benchmark_from_docs
-    from app.core.retrieval import BM25Retriever
-    from app.core.metrics import recall_at_k, mrr_at_k, ndcg_at_k
-
-    from app.core.ingest import ingest_folder
-    from app.core.benchmarks import build_benchmark_from_docs
-    from app.core.metrics import recall_at_k, mrr_at_k, ndcg_at_k
-    from app.core.retrieval import BM25Retriever
-    from app.core.tfidf import TfidfRetriever
-
+    
     chunks = ingest_folder(folder="data/docs", chunk_size=120, overlap=25)
     chunk_map = {c.chunk_id: c.text for c in chunks}
     bench = build_benchmark_from_docs(chunks)
@@ -187,6 +180,10 @@ def demo_run():
     tfidf = TfidfRetriever(chunk_map)
     tfidf_metrics = eval_retriever(tfidf, "TFIDF")
 
+    # Evaluate Hybrid (BM25 + Dense FAISS) — RRF fusion
+    hybrid = HybridRetriever(chunk_map)
+    hybrid_metrics = eval_retriever(hybrid, "HYBRID")
+
 
 
     # Save run + metrics
@@ -220,9 +217,11 @@ def demo_run():
 
         run_id_bm25 = new_run_id()
         run_id_tfidf = new_run_id()
+        run_id_hybrid = new_run_id()
 
         save_one(run_id_bm25, "BM25", bm25_metrics)
         save_one(run_id_tfidf, "TFIDF", tfidf_metrics)
+        save_one(run_id_hybrid, "HYBRID", hybrid_metrics)
 
         conn.commit()
     finally:
@@ -382,7 +381,7 @@ def runs(request: Request):
                 "run_id": run_id,
                 "created_at": row["created_at"],
                 "retriever": retriever_name,
-                "metrics": [{"name": m["metric_name"], "value": round(float(m["metric_value"]), 4)} for m in metrics],
+                "metrics": [{"name": str(m["metric_name"]), "value": round(float(m["metric_value"]), 4)} for m in metrics],
             })
 
 
@@ -495,7 +494,7 @@ def compare():
 def regression():
     conn = get_conn()
     try:
-        result = detect_regression(conn)
+        result = detect_regression(conn, retriever_filter="HYBRID")
     finally:
         conn.close()
 
