@@ -1,27 +1,63 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Virtual environments
+venv/
 .venv/
 env/
-venv/
 
-# OS
-.DS_Store
-Thumbs.db
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
 
-# SQLite databases
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Environment variables
+.env
+.env.local
+
+# Databases (generated at runtime)
 *.db
-
-# Runtime outputs
-runs/*.db
-runs/*.json
+*.sqlite
+*.sqlite3
+ragbench.db
 
 # Logs
 *.log
+logs/
 
-# Secrets (safety)
-.env
-.env.*
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
 
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.cursor/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Model caches / embeddings
+*.faiss
+*.pkl
+models/
+.cache/
+
+# Temp files
+*.tmp
+*.bak
+# Local run artifacts (generated per benchmark execution)
+runs/
