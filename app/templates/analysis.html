@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RAGBench - Failure Analysis</title>
+  <title>RAGBench — Analysis</title>
   <style>
     body {
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
@@ -13,64 +13,60 @@
       padding: 24px;
     }
     .container { max-width: 1200px; margin: 0 auto; }
-    .topbar {
-      display: flex; gap: 12px; align-items: center; justify-content: space-between;
-      margin-bottom: 14px;
-    }
-    .title { font-size: 22px; font-weight: 700; }
-    .pill {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(99, 102, 241, 0.15);
-      border: 1px solid rgba(99, 102, 241, 0.35);
-      color: #c7d2fe;
-      font-size: 12px;
-      margin-left: 10px;
-      vertical-align: middle;
-    }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .title { font-size: 22px; font-weight: 800; }
+    .muted { color: #a7b0c0; font-size: 13px; }
+    a { color: #93c5fd; text-decoration: none; }
+    a:hover { text-decoration: underline; }
     .card {
       background: #111827;
       border: 1px solid #1f2937;
       border-radius: 18px;
       padding: 16px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
-    .muted { color: #a7b0c0; font-size: 13px; }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 14px;
+    .query-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
     }
-    .qbtn {
-      display: block;
-      width: 100%;
-      text-align: left;
-      padding: 10px 12px;
-      border-radius: 12px;
+    .query-selector a {
+      padding: 6px 10px;
       border: 1px solid #1f2937;
-      background: rgba(17,24,39,0.7);
-      color: #e6e6e6;
-      cursor: pointer;
-      margin-bottom: 10px;
-    }
-    .qbtn:hover { border-color: rgba(99,102,241,0.6); }
-    .qbtn.active { border-color: rgba(99,102,241,0.9); background: rgba(99,102,241,0.12); }
-    .row {
-      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-      margin: 10px 0;
-    }
-    .tag {
-      font-size: 12px;
-      padding: 5px 8px;
-      border-radius: 999px;
-      border: 1px solid #1f2937;
+      border-radius: 8px;
       background: rgba(15,23,42,0.7);
       color: #cbd5e1;
+      font-size: 12px;
     }
-    .ok { border-color: rgba(34,197,94,0.5); background: rgba(34,197,94,0.08); color: #bbf7d0; }
-    .bad { border-color: rgba(239,68,68,0.5); background: rgba(239,68,68,0.08); color: #fecaca; }
+    .query-selector a.active {
+      background: rgba(99, 102, 241, 0.25);
+      border-color: rgba(99, 102, 241, 0.55);
+      color: #c7d2fe;
+    }
+    .query-box {
+      padding: 12px;
+      background: rgba(2,6,23,0.6);
+      border-radius: 10px;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .summary {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .summary .chip {
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: rgba(15,23,42,0.7);
+      border: 1px solid #1f2937;
+      font-size: 13px;
+    }
+    .chip.hit { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.4); color: #bbf7d0; }
+    .chip.miss { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4); color: #fecaca; }
     .table {
       width: 100%;
       border-collapse: collapse;
@@ -78,110 +74,124 @@
       overflow: hidden;
       border-radius: 14px;
       border: 1px solid #1f2937;
+      margin-top: 10px;
     }
     .table th, .table td {
-      padding: 10px 10px;
+      padding: 10px;
       border-bottom: 1px solid #1f2937;
       vertical-align: top;
     }
-    .table th { text-align: left; color: #a7b0c0; font-weight: 600; background: rgba(2,6,23,0.6); }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    pre {
-      margin: 0;
-      white-space: pre-wrap;
-      word-break: break-word;
-      color: #e2e8f0;
+    .table th {
+      text-align: left;
+      color: #a7b0c0;
+      font-weight: 600;
+      background: rgba(2,6,23,0.6);
     }
-    a { color: #93c5fd; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .tag {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      background: rgba(15,23,42,0.7);
+      color: #cbd5e1;
+    }
+    .tag.relevant { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.4); color: #bbf7d0; }
+    .tag.legacy { background: rgba(234,179,8,0.15); border-color: rgba(234,179,8,0.4); color: #fde68a; }
+    .why-box {
+      padding: 12px;
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: 10px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #bfdbfe;
+    }
   </style>
 </head>
 <body>
 <div class="container">
   <div class="topbar">
-    <div class="title">RAGBench Failure Analysis <span class="pill">Local • $0</span></div>
-    <div class="muted">Run: <span class="mono">{{ run_id }}</span></div>
+    <div class="title">Retrieval Analysis</div>
+    <div class="muted">
+      <a href="/">Home</a> •
+      <a href="/runs">Runs</a> •
+      <a href="/dashboard">Dashboard</a>
+    </div>
   </div>
 
-  <div class="grid">
-    <div class="card">
-      <div style="font-weight:700; margin-bottom:10px;">Benchmark Queries</div>
+  <div class="card">
+    <div class="muted">Run ID: <span class="mono">{{ run_id }}</span></div>
+    <div style="margin-top:6px; font-size:14px;">
+      Choose a benchmark query to inspect what the retriever returned and why.
+    </div>
+    <div class="query-selector">
       {% for q in queries %}
-        <button class="qbtn {% if loop.index0 == selected_idx %}active{% endif %}"
-                onclick="window.location='?q={{ loop.index0 }}'">
-          {{ q.query }}
-        </button>
+        <a href="/analysis/{{ run_id }}?q={{ loop.index0 }}"
+           class="{% if loop.index0 == selected_idx %}active{% endif %}">
+          Q{{ loop.index }}
+        </a>
       {% endfor %}
-      <div class="muted">Tip: click queries to inspect retrieval results.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size: 15px; font-weight: 600;">Selected Query</div>
+    <div class="query-box mono">{{ selected.query }}</div>
+
+    <div class="summary">
+      <div class="chip">Top-K: {{ k_rank }}</div>
+      <div class="chip">Relevant chunks: {{ relevant_count }}</div>
+      {% if hit %}
+        <div class="chip hit">✓ Hit at rank {{ hit_rank }}</div>
+      {% else %}
+        <div class="chip miss">✗ No relevant chunk in top-{{ k_rank }}</div>
+      {% endif %}
     </div>
 
-    <div>
-      <div class="card">
-        <div style="font-weight:700;">Selected Query</div>
-        <div style="margin-top:8px; font-size:16px;">{{ selected.query }}</div>
-
-        <div class="row">
-          <span class="tag">k_rank={{ k_rank }}</span>
-          <span class="tag">relevant={{ relevant_count }}</span>
-
-          {% if hit %}
-            <span class="tag ok">HIT ✅ (rank {{ hit_rank }})</span>
-          {% else %}
-            <span class="tag bad">MISS ❌ (no relevant chunk in top {{ k_rank }})</span>
-          {% endif %}
-        </div>
-
-        <div class="muted" style="margin-top:10px;">
-          <b>Relevant chunk IDs:</b>
-          <span class="mono">{{ relevant_ids }}</span>
-        </div>
-
-        {% if why %}
-        <div style="margin-top:12px;">
-          <div class="muted"><b>Why (heuristic):</b></div>
-          <div class="mono">{{ why }}</div>
-        </div>
-        {% endif %}
-      </div>
-
-      <div class="card">
-        <div style="font-weight:700; margin-bottom:10px;">Top Retrieved Chunks</div>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Rank</th>
-              <th>Chunk ID</th>
-              <th>Score</th>
-              <th>Label</th>
-              <th>Preview</th>
-              <th>Relevant?</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in retrieved %}
-            <tr>
-              <td class="mono">{{ r.rank }}</td>
-              <td class="mono">{{ r.chunk_id }}</td>
-              <td class="mono">{{ "%.4f"|format(r.score) }}</td>
-              <td><span class="tag">{{ r.label }}</span></td>
-              <td><pre>{{ r.preview }}</pre></td>
-              <td>
-                {% if r.is_relevant %}
-                  <span class="tag ok">YES</span>
-                {% else %}
-                  <span class="tag">no</span>
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        <div class="muted" style="margin-top:10px;">
-          This view is the core of production debugging: you can see what the retriever chose and why it may have missed.
-        </div>
-      </div>
-
+    <div class="muted" style="margin-top:10px;">
+      Ground-truth relevant IDs: <span class="mono">{{ relevant_ids }}</span>
     </div>
+
+    {% if why %}
+    <div class="why-box">
+      <strong>Why this query failed:</strong> {{ why }}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div style="font-size: 15px; font-weight: 600;">Retrieved Chunks (ranked)</div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Chunk ID</th>
+          <th>Score</th>
+          <th>Label</th>
+          <th>Preview</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in retrieved %}
+        <tr>
+          <td class="mono">{{ row.rank }}</td>
+          <td class="mono">{{ row.chunk_id }}</td>
+          <td class="mono">{{ "%.4f"|format(row.score) }}</td>
+          <td>
+            {% if row.is_relevant %}
+              <span class="tag relevant">RELEVANT</span>
+            {% elif row.label != "CURRENT" %}
+              <span class="tag legacy">{{ row.label }}</span>
+            {% else %}
+              <span class="tag">{{ row.label }}</span>
+            {% endif %}
+          </td>
+          <td style="max-width: 500px;">{{ row.preview }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 </body>
