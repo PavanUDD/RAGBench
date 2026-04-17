@@ -1,0 +1,4 @@
+# Exclude template files from language statistics
+# These are Jinja2 templates rendered by Python, not standalone HTML
+app/templates/*.html linguist-vendored
+app/templates/**/*.html linguist-vendored
