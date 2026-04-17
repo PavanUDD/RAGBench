@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>RAGBench — Upload & Test</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060910; --surface: #0d1117; --surface2: #161b22; --border: #21262d;
+      --accent: #3b82f6; --purple: #8b5cf6; --green: #10b981; --yellow: #f59e0b;
+      --red: #ef4444; --text: #e6edf3; --muted: #8b949e; --muted2: #6e7681;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; border-bottom: 1px solid var(--border); background: rgba(6,9,16,0.9); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; text-decoration: none; color: var(--text); }
+    .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .nav-links a { padding: 7px 14px; border-radius: 8px; font-size: 14px; color: var(--muted); text-decoration: none; margin-left: 4px; }
+    .nav-links a:hover { background: var(--surface2); color: var(--text); }
+    .nav-cta { padding: 8px 18px; background: var(--accent); border-radius: 8px; font-size: 14px; font-weight: 600; color: white; text-decoration: none; }
+
+    .page { max-width: 800px; margin: 0 auto; padding: 48px 40px; }
+    .page-header { text-align: center; margin-bottom: 40px; }
+    .page-tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.25); color: #c4b5fd; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
+    h1 { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
+    .page-sub { font-size: 16px; color: var(--muted); line-height: 1.6; }
+
+    /* UPLOAD ZONE */
+    .upload-zone { background: var(--surface); border: 2px dashed var(--border); border-radius: 16px; padding: 48px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; margin-bottom: 24px; }
+    .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+    .upload-zone.has-file { border-color: var(--green); border-style: solid; background: rgba(16,185,129,0.05); }
+    .upload-icon { font-size: 48px; margin-bottom: 16px; }
+    .upload-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .upload-sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+    .upload-types { display: flex; gap: 8px; justify-content: center; }
+    .type-badge { font-size: 12px; padding: 4px 10px; border-radius: 99px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+    #file-input { display: none; }
+    .file-selected { display: none; }
+    .file-selected.show { display: flex; align-items: center; gap: 12px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; padding: 14px 18px; margin-top: 16px; }
+    .file-icon { font-size: 24px; }
+    .file-info h4 { font-size: 15px; font-weight: 700; color: #6ee7b7; }
+    .file-info p { font-size: 13px; color: var(--muted); }
+
+    /* CONFIG */
+    .config-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 24px; }
+    .config-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .config-field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .config-field input, .config-field select {
+      width: 100%; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: 14px; outline: none;
+    }
+    .config-field input:focus, .config-field select:focus { border-color: var(--accent); }
+
+    /* SUBMIT */
+    .submit-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border: none; border-radius: 12px; font-size: 16px; font-weight: 700; color: white; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(59,130,246,0.35); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* PROGRESS */
+    .progress-card { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px; margin-top: 24px; text-align: center; }
+    .progress-card.show { display: block; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .progress-steps { font-size: 13px; color: var(--muted); line-height: 2; }
+    .step-done { color: var(--green); }
+
+    /* HOW IT WORKS */
+    .how-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-top: 32px; }
+    .how-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+    .how-steps { display: flex; flex-direction: column; gap: 12px; }
+    .how-step { display: flex; gap: 14px; align-items: flex-start; }
+    .how-num { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+    .how-text { font-size: 14px; color: var(--muted); line-height: 1.5; padding-top: 4px; }
+    .how-text strong { color: var(--text); }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-logo"><div class="logo-icon">⚡</div>RAGBench</a>
+  <div class="nav-links">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/runs">Runs</a>
+    <a href="/compare">Compare</a>
+    <a href="/regression">Regression Guard</a>
+  </div>
+  <a href="/demo-run" class="nav-cta">▶ Quick Run</a>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div class="page-tag">🧪 Custom Document Testing</div>
+    <h1>Upload & Benchmark</h1>
+    <p class="page-sub">Drop any PDF, TXT, or Markdown file and RAGBench will chunk it, index it, and benchmark all 3 retrieval strategies against auto-generated queries.</p>
+  </div>
+
+  <form id="upload-form" enctype="multipart/form-data">
+    <!-- DROP ZONE -->
+    <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="upload-icon">📄</div>
+      <div class="upload-title">Drop your document here</div>
+      <div class="upload-sub">or click to browse files</div>
+      <div class="upload-types">
+        <span class="type-badge">PDF</span>
+        <span class="type-badge">TXT</span>
+        <span class="type-badge">Markdown</span>
+      </div>
+      <input type="file" id="file-input" name="file" accept=".pdf,.txt,.md" onchange="handleFileSelect(this)"/>
+    </div>
+    <div class="file-selected" id="file-selected">
+      <div class="file-icon">✅</div>
+      <div class="file-info">
+        <h4 id="file-name">filename.pdf</h4>
+        <p id="file-size">0 KB</p>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="config-card">
+      <div class="config-title">⚙️ Chunking Configuration</div>
+      <div class="config-grid">
+        <div class="config-field">
+          <label>Chunk Size (words)</label>
+          <input type="number" name="chunk_size" value="200" min="50" max="500"/>
+        </div>
+        <div class="config-field">
+          <label>Overlap (words)</label>
+          <input type="number" name="overlap" value="30" min="0" max="100"/>
+        </div>
+        <div class="config-field">
+          <label>Top-K Retrieval</label>
+          <input type="number" name="top_k" value="5" min="1" max="20"/>
+        </div>
+        <div class="config-field">
+          <label>Auto-generate queries</label>
+          <select name="num_queries">
+            <option value="10">10 queries</option>
+            <option value="20" selected>20 queries</option>
+            <option value="30">30 queries</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="submit-btn" id="submit-btn" disabled>
+      📄 Upload file first to run benchmark
+    </button>
+  </form>
+
+  <!-- PROGRESS -->
+  <div class="progress-card" id="progress-card">
+    <div class="spinner"></div>
+    <div class="progress-title">Running benchmark on your document...</div>
+    <div class="progress-steps" id="progress-steps">
+      <div>⏳ Extracting text from document...</div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-card">
+    <div class="how-title">How upload benchmarking works</div>
+    <div class="how-steps">
+      <div class="how-step"><div class="how-num">1</div><div class="how-text"><strong>Text extraction</strong> — PDF/TXT/MD content is extracted and cleaned</div></div>
+      <div class="how-step"><div class="how-num">2</div><div class="how-text"><strong>Chunking</strong> — Document split into overlapping word-level chunks at your configured size</div></div>
+      <div class="how-step"><div class="how-num">3</div><div class="how-text"><strong>Indexing</strong> — BM25, TF-IDF, and FAISS dense indexes built on your chunks</div></div>
+      <div class="how-step"><div class="how-num">4</div><div class="how-text"><strong>Auto-queries</strong> — RAGBench generates benchmark queries from your document content</div></div>
+      <div class="how-step"><div class="how-num">5</div><div class="how-text"><strong>Evaluation</strong> — Recall@5, MRR@10, nDCG@10 computed per retriever — results on dashboard</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const submitBtn = document.getElementById('submit-btn');
+  const fileSelected = document.getElementById('file-selected');
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) {
+      fileInput.files = e.dataTransfer.files;
+      handleFileSelect(fileInput);
+    }
+  });
+
+  function handleFileSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    document.getElementById('file-name').textContent = file.name;
+    document.getElementById('file-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
+    fileSelected.classList.add('show');
+    dropZone.classList.add('has-file');
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '⚡ Run Benchmark on ' + file.name;
+  }
+
+  document.getElementById('upload-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '⏳ Running...';
+    document.getElementById('progress-card').classList.add('show');
+
+    const steps = document.getElementById('progress-steps');
+    const addStep = (text) => {
+      steps.innerHTML += `<div class="step-done">✅ ${text}</div>`;
+    };
+
+    setTimeout(() => addStep('Text extracted and cleaned'), 800);
+    setTimeout(() => addStep('Document chunked and indexed'), 2000);
+    setTimeout(() => addStep('BM25 · TF-IDF · FAISS indexes built'), 3500);
+    setTimeout(() => addStep('Running evaluation queries...'), 5000);
+
+    try {
+      const response = await fetch('/upload-benchmark', {
+        method: 'POST',
+        body: formData
+      });
+
+      const text = await response.text();
+
+      if (response.ok) {
+        // Server returns the full results HTML page — render it directly
+        document.open();
+        document.write(text);
+        document.close();
+      } else {
+        document.getElementById('progress-card').innerHTML = `
+          <div style="color:#fca5a5;font-size:16px;font-weight:700">❌ Error</div>
+          <div style="color:#8b949e;margin-top:8px;font-size:14px">${text}</div>
+          <a href="/upload" style="color:#3b82f6;margin-top:16px;display:block">Try again</a>
+        `;
+      }
+    } catch (err) {
+      document.getElementById('progress-card').innerHTML = `
+        <div style="color:#fca5a5;font-size:16px;font-weight:700">❌ Network Error</div>
+        <div style="color:#8b949e;margin-top:8px;font-size:14px">${err.message}</div>
+      `;
+    }
+  });
+</script>
+</body>
+</html>
